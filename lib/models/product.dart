@@ -1,75 +1,45 @@
-// =========================================================================
-// MODELO: Product
-// =========================================================================
-
 class Product {
   final int id;
-  final String title;
-  final double price;
-  final String description;
-  final String category;
-  final String image;
-  final Rating rating;
+  final String nombre;
+  final double precio;
+  final String imagen;
+  final String? creadoEn;
 
   Product({
     required this.id,
-    required this.title,
-    required this.price,
-    required this.description,
-    required this.category,
-    required this.image,
-    required this.rating,
+    required this.nombre,
+    required this.precio,
+    required this.imagen,
+    this.creadoEn,
   });
 
-  // Crear un Product desde JSON (útil para APIs)
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
-      id: json['id'] as int,
-      title: json['title'] as String,
-      price: (json['price'] as num).toDouble(),
-      description: json['description'] as String,
-      category: json['category'] as String,
-      image: json['image'] as String,
-      rating: Rating.fromJson(json['rating'] as Map<String, dynamic>),
+      id: json['id'] ?? 0,
+      nombre: json['nombre'] ?? '',
+      precio: (json['precio'] is String) 
+          ? double.parse(json['precio']) 
+          : (json['precio'] ?? 0.0).toDouble(),
+      imagen: json['imagen'] ?? '',
+      creadoEn: json['creado_en'],
     );
   }
 
-  // Convertir Product a JSON (útil para almacenamiento local)
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'title': title,
-      'price': price,
-      'description': description,
-      'category': category,
-      'image': image,
-      'rating': rating.toJson(),
+      'nombre': nombre,
+      'precio': precio,
+      'imagen': imagen,
+      'creado_en': creadoEn,
     };
   }
-}
 
-// -------------------------------------------------------------------------
-
-class Rating {
-  final double rate;
-  final int count;
-
-  Rating({
-    required this.rate,
-    required this.count,
-  });
-
-  factory Rating.fromJson(Map<String, dynamic> json) {
-    return Rating(
-      rate: (json['rate'] as num).toDouble(),
-      count: json['count'] as int,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toJsonWithoutId() {
     return {
-      'rate': rate,
-      'count': count,
+      'nombre': nombre,
+      'precio': precio,
+      'imagen': imagen,
     };
   }
 }

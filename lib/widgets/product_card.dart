@@ -30,7 +30,7 @@ class ProductCard extends StatelessWidget {
                 padding: const EdgeInsets.all(8.0),
                 child: Center(
                   child: Image.network(
-                    product.image,
+                    product.imagen,
                     fit: BoxFit.contain,
                     // Altura máxima para asegurar que quepa en el card
                     height: 100, 
@@ -46,7 +46,7 @@ class ProductCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: Text(
-                product.title,
+                product.nombre,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
@@ -57,7 +57,7 @@ class ProductCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(left: 8.0, top: 4.0, bottom: 8.0),
               child: Text(
-                '\$${product.price.toStringAsFixed(2)}',
+                '\$${product.precio.toStringAsFixed(2)}',
                 style: const TextStyle(
                   color: Colors.green,
                   fontSize: 16,

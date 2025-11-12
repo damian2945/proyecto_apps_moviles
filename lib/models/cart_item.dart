@@ -6,5 +6,6 @@ class CartItem {
 
   CartItem({required this.product, this.quantity = 1});
 
-  double get subtotal => product.price * quantity;
+  // Cambiar product.price por product.precio
+  double get subtotal => product.precio * quantity;
 }

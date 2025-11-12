@@ -1,17 +1,13 @@
-  // lib/widgets/custom_search_delegate.dart
-
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/product_provider.dart';
 import '../models/product.dart';
-import '../screens/search_results_screen.dart'; // Asegúrate de tener esta importación
 
 class CustomSearchDelegate extends SearchDelegate<String> {
-  @override
-  String get searchFieldLabel => 'Search products, brands, stores...';
+  final List<Product> products;
+
+  CustomSearchDelegate(this.products);
 
   @override
-  List<Widget>? buildActions(BuildContext context) {
+  List<Widget> buildActions(BuildContext context) {
     return [
       IconButton(
         icon: const Icon(Icons.clear),
@@ -23,12 +19,9 @@ class CustomSearchDelegate extends SearchDelegate<String> {
   }
 
   @override
-  Widget? buildLeading(BuildContext context) {
+  Widget buildLeading(BuildContext context) {
     return IconButton(
-      icon: AnimatedIcon(
-        icon: AnimatedIcons.menu_arrow,
-        progress: transitionAnimation,
-      ),
+      icon: const Icon(Icons.arrow_back),
       onPressed: () {
         close(context, '');
       },
@@ -37,40 +30,33 @@ class CustomSearchDelegate extends SearchDelegate<String> {
 
   @override
   Widget buildResults(BuildContext context) {
-    // CORRECCIÓN: Usamos WidgetsBinding para asegurarnos de que el contexto esté disponible antes de cerrar.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Navega a la pantalla de resultados con la consulta.
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => SearchResultsScreen(searchQuery: query),
-        ),
-      );
-    });
-    // Cerramos la búsqueda con una cadena vacía para evitar errores de duplicación.
-    close(context, '');
-    return Container();
+    final results = products.where((product) {
+      return product.nombre.toLowerCase().contains(query.toLowerCase());
+    }).toList();
+
+    return _buildSearchResults(results);
   }
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    // Asegúrate de usar listen: false dentro del delegate para evitar problemas de rebuild.
-    // El error 'searchProducts was called on null' se resuelve asegurando que ProductProvider
-    // esté inicializado en main.dart y disponible para este contexto (como te expliqué antes).
-    final productProvider = Provider.of<ProductProvider>(context, listen: false);
-    final List<Product> suggestionList = productProvider.searchProducts(query);
+    final suggestions = products.where((product) {
+      return product.nombre.toLowerCase().contains(query.toLowerCase());
+    }).toList();
 
-    if (suggestionList.isEmpty && query.isNotEmpty) {
-      // [El código de sugerencias está correcto]
-      return Center(
+    return _buildSearchResults(suggestions);
+  }
+
+  Widget _buildSearchResults(List<Product> results) {
+    if (results.isEmpty) {
+      return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
+            Icon(Icons.search_off, size: 80, color: Colors.grey),
+            SizedBox(height: 16),
             Text(
-              'No products found for "$query"',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              'No se encontraron productos',
+              style: TextStyle(fontSize: 18, color: Colors.grey),
             ),
           ],
         ),
@@ -78,47 +64,49 @@ class CustomSearchDelegate extends SearchDelegate<String> {
     }
 
     return ListView.builder(
-      itemCount: suggestionList.length,
+      itemCount: results.length,
       itemBuilder: (context, index) {
-        final product = suggestionList[index];
+        final product = results[index];
         return ListTile(
-          // [El código de ListTile está correcto]
           leading: ClipRRect(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(8),
             child: Image.network(
-              product.image,
-              width: 40,
-              height: 40,
+              product.imagen,
+              width: 50,
+              height: 50,
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) {
                 return Container(
-                  width: 40,
-                  height: 40,
+                  width: 50,
+                  height: 50,
                   color: Colors.grey[300],
-                  child: Icon(Icons.image, color: Colors.grey[600]),
+                  child: const Icon(Icons.image_not_supported),
                 );
               },
             ),
           ),
           title: Text(
-            product.title,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            product.nombre,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
           subtitle: Text(
-            product.category,
-            style: TextStyle(color: Colors.grey[600]),
-          ),
-          trailing: Text(
-            '\$${product.price.toStringAsFixed(2)}',
+            '\$${product.precio.toStringAsFixed(2)}',
             style: const TextStyle(
               color: Colors.green,
               fontWeight: FontWeight.bold,
             ),
           ),
+          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
           onTap: () {
-            close(context, product.title);
+            close(context, product.nombre);
+            // Aquí puedes navegar a la pantalla de detalles si lo deseas
+            // Navigator.push(
+            //   context,
+            //   MaterialPageRoute(
+            //     builder: (context) => ProductDetailScreen(product: product),
+            //   ),
+            // );
           },
         );
       },

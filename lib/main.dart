@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-// Importaciones necesarias - ASEGÚRATE de que estas rutas coincidan con tu estructura
-import 'providers/product_provider.dart';
-import 'providers/cart_provider.dart';
 import 'screens/login_screen.dart';
+import 'providers/cart_provider.dart';
+import 'providers/product_provider.dart';
 
 void main() {
   runApp(const MyApp());
@@ -17,26 +15,17 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (_) => ProductProvider(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => CartProvider(),
-        ),
+        ChangeNotifierProvider(create: (_) => ProductProvider()),
+        ChangeNotifierProvider(create: (_) => CartProvider()),
       ],
       child: MaterialApp(
         title: 'Shopping App',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          primarySwatch: Colors.green,
-          scaffoldBackgroundColor: Colors.grey[50],
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.black87,
-            elevation: 0,
-          ),
+          primarySwatch: Colors.blue,
+          useMaterial3: true,
         ),
-        home: const LoginScreen(),
+        home: const LoginScreen(), // Cambiar aquí para empezar en login
       ),
     );
   }

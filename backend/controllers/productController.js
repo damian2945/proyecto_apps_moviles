@@ -60,13 +60,13 @@ class ProductController {
 
             const result = await Product.create(productData);
             
+            // Obtener el producto recién creado
+            const newProduct = await Product.getById(result.insertId);
+            
             res.status(201).json({
                 success: true,
                 message: 'Producto creado exitosamente',
-                data: {
-                    id: result.insertId,
-                    ...productData
-                }
+                data: newProduct
             });
         } catch (error) {
             res.status(500).json({
@@ -92,15 +92,15 @@ class ProductController {
                 });
             }
 
-            const result = await Product.update(id, productData);
+            await Product.update(id, productData);
+            
+            // Obtener el producto actualizado
+            const updatedProduct = await Product.getById(id);
 
             res.status(200).json({
                 success: true,
                 message: 'Producto actualizado exitosamente',
-                data: {
-                    id: parseInt(id),
-                    ...productData
-                }
+                data: updatedProduct
             });
         } catch (error) {
             res.status(500).json({
@@ -163,26 +163,6 @@ class ProductController {
             res.status(500).json({
                 success: false,
                 message: 'Error al buscar productos',
-                error: error.message
-            });
-        }
-    }
-
-    // GET - Obtener productos por categoría
-    static async getProductsByCategory(req, res) {
-        try {
-            const { categoria } = req.params;
-            const products = await Product.getByCategory(categoria);
-
-            res.status(200).json({
-                success: true,
-                data: products,
-                count: products.length
-            });
-        } catch (error) {
-            res.status(500).json({
-                success: false,
-                message: 'Error al obtener productos por categoría',
                 error: error.message
             });
         }

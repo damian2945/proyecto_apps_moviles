@@ -4,10 +4,13 @@ import '../models/product.dart';
 import '../services/api_service.dart';
 import '../widgets/custom_search_delegate.dart';
 import '../providers/cart_provider.dart';
+import '../providers/favorites_provider.dart';
 import 'product_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  final Map<String, String> currentUser;
+
+  const HomeScreen({super.key, required this.currentUser});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -73,29 +76,31 @@ class _HomeScreenState extends State<HomeScreen> {
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage.isNotEmpty
               ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline, size: 60, color: Colors.red),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Error al cargar productos',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 8),
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Text(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.error_outline, size: 60, color: Colors.red),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Error al cargar productos',
+                          style: Theme.of(context).textTheme.titleLarge,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
                           _errorMessage,
                           textAlign: TextAlign.center,
                           style: const TextStyle(color: Colors.grey),
                         ),
-                      ),
-                      ElevatedButton(
-                        onPressed: _loadProducts,
-                        child: const Text('Reintentar'),
-                      ),
-                    ],
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: _loadProducts,
+                          child: const Text('Reintentar'),
+                        ),
+                      ],
+                    ),
                   ),
                 )
               : _products.isEmpty
@@ -110,10 +115,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: GridView.builder(
                         padding: const EdgeInsets.all(16),
                         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2, // 2 columnas
-                          childAspectRatio: 0.75, // Proporción altura/anchura
-                          crossAxisSpacing: 16, // Espacio horizontal entre tarjetas
-                          mainAxisSpacing: 16, // Espacio vertical entre tarjetas
+                          crossAxisCount: 2,
+                          childAspectRatio: 0.65,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
                         ),
                         itemCount: _products.length,
                         itemBuilder: (context, index) {
@@ -122,16 +127,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         },
                       ),
                     ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Navegar a pantalla de agregar producto
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Función de agregar producto próximamente')),
-          );
-        },
-        backgroundColor: Colors.blue,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
     );
   }
 
@@ -141,7 +136,10 @@ class _HomeScreenState extends State<HomeScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ProductDetailScreen(product: product),
+            builder: (context) => ProductDetailScreen(
+              product: product,
+              currentUser: widget.currentUser, // ✅ Pasar usuario
+            ),
           ),
         );
       },
@@ -155,7 +153,6 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             // Imagen del producto
             Expanded(
-              flex: 3,
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
@@ -166,36 +163,38 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Stack(
                     children: [
                       // Imagen
-                      Image.network(
-                        product.imagen,
+                      SizedBox(
                         width: double.infinity,
                         height: double.infinity,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Center(
-                            child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                      loadingProgress.expectedTotalBytes!
-                                  : null,
-                            ),
-                          );
-                        },
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: Colors.grey[300],
-                            child: const Center(
-                              child: Icon(
-                                Icons.image_not_supported,
-                                size: 50,
-                                color: Colors.grey,
+                        child: Image.network(
+                          product.imagen,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Center(
+                              child: CircularProgressIndicator(
+                                value: loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                    : null,
                               ),
-                            ),
-                          );
-                        },
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: Colors.grey[300],
+                              child: const Center(
+                                child: Icon(
+                                  Icons.image_not_supported,
+                                  size: 50,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                       ),
-                      // Badge de "Nuevo"
+                      // Badge NUEVO
                       Positioned(
                         top: 8,
                         right: 8,
@@ -215,89 +214,119 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                       ),
+                      // Botón de favoritos
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        child: Consumer<FavoritesProvider>(
+                          builder: (context, favorites, child) {
+                            final isFavorite = favorites.isFavorite(product.id);
+                            return GestureDetector(
+                              onTap: () {
+                                favorites.toggleFavorite(product);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      isFavorite
+                                          ? '${product.nombre} eliminado de favoritos'
+                                          : '${product.nombre} agregado a favoritos',
+                                    ),
+                                    duration: const Duration(seconds: 2),
+                                    backgroundColor: isFavorite ? Colors.orange : Colors.green,
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 4,
+                                      spreadRadius: 1,
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(
+                                  isFavorite ? Icons.favorite : Icons.favorite_border,
+                                  color: isFavorite ? Colors.red : Colors.grey,
+                                  size: 20,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ),
             ),
             // Información del producto
-            Expanded(
-              flex: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Nombre del producto
-                    Text(
-                      product.nombre,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        height: 1.2,
-                      ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    product.nombre,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      height: 1.2,
                     ),
-                    const SizedBox(height: 4),
-                    // Precio y botón de agregar al carrito
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            '\$${product.precio.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
-                            ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '\$${product.precio.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
                           ),
                         ),
-                        // Botón de agregar al carrito con Provider
-                        Consumer<CartProvider>(
-                          builder: (context, cart, child) {
-                            return Container(
-                              decoration: BoxDecoration(
-                                color: Colors.blue,
-                                borderRadius: BorderRadius.circular(8),
+                      ),
+                      Consumer<CartProvider>(
+                        builder: (context, cart, child) {
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: Colors.blue,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: IconButton(
+                              icon: const Icon(Icons.add_shopping_cart, size: 18),
+                              color: Colors.white,
+                              padding: const EdgeInsets.all(4),
+                              constraints: const BoxConstraints(
+                                minWidth: 32,
+                                minHeight: 32,
                               ),
-                              child: IconButton(
-                                icon: const Icon(Icons.add_shopping_cart, size: 18),
-                                color: Colors.white,
-                                padding: const EdgeInsets.all(4),
-                                constraints: const BoxConstraints(),
-                                onPressed: () {
-                                  // Agregar producto al carrito
-                                  cart.addItem(product);
-                                  
-                                  // Mostrar notificación
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('${product.nombre} agregado al carrito'),
-                                      duration: const Duration(seconds: 2),
-                                      backgroundColor: Colors.green,
-                                      action: SnackBarAction(
-                                        label: 'Ver carrito',
-                                        textColor: Colors.white,
-                                        onPressed: () {
-                                          // Cambiar a la pestaña del carrito (índice 1)
-                                          // Esto requiere acceso al estado del MainNavigation
-                                          // Por ahora solo mostramos el snackbar
-                                        },
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                              onPressed: () {
+                                cart.addItem(product);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('${product.nombre} agregado al carrito'),
+                                    duration: const Duration(seconds: 2),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],

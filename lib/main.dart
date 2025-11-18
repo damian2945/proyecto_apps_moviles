@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'screens/login_screen.dart';
 import 'providers/cart_provider.dart';
 import 'providers/product_provider.dart';
+import 'providers/favorites_provider.dart';
+import 'providers/purchases_provider.dart';
 
 void main() {
   runApp(const MyApp());
@@ -17,6 +19,8 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => ProductProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
+        ChangeNotifierProvider(create: (_) => FavoritesProvider()),
+        ChangeNotifierProvider(create: (_) => PurchasesProvider()),
       ],
       child: MaterialApp(
         title: 'Shopping App',
@@ -25,7 +29,7 @@ class MyApp extends StatelessWidget {
           primarySwatch: Colors.blue,
           useMaterial3: true,
         ),
-        home: const LoginScreen(), // Cambiar aquí para empezar en login
+        home: const LoginScreen(),
       ),
     );
   }

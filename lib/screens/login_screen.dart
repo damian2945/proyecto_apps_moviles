@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'main_navigation.dart';
+import 'admin_navigation.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -15,25 +16,35 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _isLoading = false;
 
-  // Base de datos de usuarios locales (igual a tu captura)
+  // Base de datos de usuarios locales
   final Map<String, Map<String, String>> _localUsers = {
+    'admin': {
+      'password': 'admin123',
+      'nombre': 'Administrador',
+      'telefono': '+52 312 000 0000',
+      'direccion': 'Tienda Principal',
+      'role': 'admin',
+    },
     'damian@gmail.com': {
       'password': '1234',
       'nombre': 'Damián',
       'telefono': '+52 312 456 7890',
       'direccion': 'Colima, México',
+      'role': 'customer',
     },
     'alberto@gmail.com': {
       'password': '123456',
       'nombre': 'Alberto',
       'telefono': '+52 312 123 4567',
       'direccion': 'Guadalajara, México',
+      'role': 'customer',
     },
     'jesus@gmail.com': {
       'password': '123456789',
       'nombre': 'Jesús',
       'telefono': '+52 312 987 6543',
       'direccion': 'Monterrey, México',
+      'role': 'customer',
     },
   };
 
@@ -50,19 +61,33 @@ class _LoginScreenState extends State<LoginScreen> {
             _localUsers[email]!['password'] == password) {
           // Login exitoso
           if (!mounted) return;
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => MainNavigation(
-                currentUser: {
-                  'email': email,
-                  'nombre': _localUsers[email]!['nombre']!,
-                  'telefono': _localUsers[email]!['telefono']!,
-                  'direccion': _localUsers[email]!['direccion']!,
-                },
+
+          final userData = {
+            'email': email,
+            'nombre': _localUsers[email]!['nombre']!,
+            'telefono': _localUsers[email]!['telefono']!,
+            'direccion': _localUsers[email]!['direccion']!,
+            'role': _localUsers[email]!['role']!,
+          };
+
+          // Redirigir según el rol
+          if (userData['role'] == 'admin') {
+            // Navegar al panel de administrador
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => AdminNavigation(currentUser: userData),
               ),
-            ),
-          );
+            );
+          } else {
+            // Navegar a la app de comprador
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MainNavigation(currentUser: userData),
+              ),
+            );
+          }
         } else {
           // Login fallido
           if (!mounted) return;
@@ -137,14 +162,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 32),
 
-                        // Campo de correo
+                        // Campo de correo/usuario
                         TextFormField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
                           decoration: InputDecoration(
-                            labelText: 'Correo electrónico',
-                            hintText: 'ejemplo@correo.com',
-                            prefixIcon: const Icon(Icons.email_outlined),
+                            labelText: 'Usuario / Correo electrónico',
+                            hintText: 'admin o correo@ejemplo.com',
+                            prefixIcon: const Icon(Icons.person_outlined),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -153,10 +178,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Por favor ingresa tu correo';
-                            }
-                            if (!value.contains('@')) {
-                              return 'Ingresa un correo válido';
+                              return 'Por favor ingresa tu usuario o correo';
                             }
                             return null;
                           },
@@ -243,26 +265,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           },
                           child: const Text('¿Olvidaste tu contraseña?'),
                         ),
-
-                        const SizedBox(height: 24),
-                        const Divider(),
-                        const SizedBox(height: 16),
-
-                        // Sección de usuarios de prueba
-                        ExpansionTile(
-                          title: const Text(
-                            'Usuarios de prueba',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          children: [
-                            _buildTestUserTile('damian@gmail.com', '1234'),
-                            _buildTestUserTile('alberto@gmail.com', '123456'),
-                            _buildTestUserTile('jesus@gmail.com', '123456789'),
-                          ],
-                        ),
                       ],
                     ),
                   ),
@@ -272,25 +274,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildTestUserTile(String email, String password) {
-    return ListTile(
-      dense: true,
-      leading: const Icon(Icons.person_outline, size: 20),
-      title: Text(
-        email,
-        style: const TextStyle(fontSize: 12),
-      ),
-      subtitle: Text(
-        'Password: $password',
-        style: const TextStyle(fontSize: 11, color: Colors.grey),
-      ),
-      onTap: () {
-        _emailController.text = email;
-        _passwordController.text = password;
-      },
     );
   }
 

@@ -8,7 +8,7 @@ import '../providers/cart_provider.dart';
 class MainNavigation extends StatefulWidget {
   final Map<String, String> currentUser;
 
-  const MainNavigation({Key? key, required this.currentUser}) : super(key: key);
+  const MainNavigation({super.key, required this.currentUser});
 
   @override
   State<MainNavigation> createState() => _MainNavigationState();
@@ -23,8 +23,8 @@ class _MainNavigationState extends State<MainNavigation> {
   void initState() {
     super.initState();
     _screens = [
-      const HomeScreen(),
-      const CartScreen(),
+      HomeScreen(currentUser: widget.currentUser), // ✅ SIN const
+      CartScreen(currentUser: widget.currentUser), // ✅ SIN const
       ProfileScreen(currentUser: widget.currentUser),
     ];
   }

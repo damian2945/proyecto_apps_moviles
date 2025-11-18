@@ -4,7 +4,7 @@ class Product {
     // Obtener todos los productos
     static async getAll() {
         try {
-            const [rows] = await db.query('SELECT * FROM productos');
+            const [rows] = await db.query('SELECT * FROM productos ORDER BY id DESC');
             return rows;
         } catch (error) {
             throw error;

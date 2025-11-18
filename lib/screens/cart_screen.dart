@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/cart_provider.dart';
+import '../providers/purchases_provider.dart';
+import '../models/purchase.dart';
 
 class CartScreen extends StatelessWidget {
-  const CartScreen({Key? key}) : super(key: key);
+  final Map<String, String>? currentUser;
+
+  const CartScreen({super.key, this.currentUser});
 
   @override
   Widget build(BuildContext context) {
@@ -94,7 +98,7 @@ class CartScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCartItem(BuildContext context, item, CartProvider cart) {
+  Widget _buildCartItem(BuildContext context, dynamic item, CartProvider cart) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
@@ -224,32 +228,7 @@ class CartScreen extends StatelessWidget {
               height: 50,
               child: ElevatedButton(
                 onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Confirmar compra'),
-                      content: Text('Total a pagar: \$${cart.totalAmount.toStringAsFixed(2)}'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Cancelar'),
-                        ),
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            cart.clearCart();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('¡Compra realizada con éxito!'),
-                                backgroundColor: Colors.green,
-                              ),
-                            );
-                          },
-                          child: const Text('Confirmar'),
-                        ),
-                      ],
-                    ),
-                  );
+                  _processPurchase(context, cart);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
@@ -261,6 +240,100 @@ class CartScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _processPurchase(BuildContext context, CartProvider cart) {
+    final currentUserEmail = currentUser?['email'] ?? 'cliente@ejemplo.com';
+    final currentUserName = currentUser?['nombre'] ?? 'Cliente';
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar compra'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Total de productos: ${cart.itemCount}'),
+            const SizedBox(height: 8),
+            Text(
+              'Total a pagar: \$${cart.totalAmount.toStringAsFixed(2)}',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.green,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final purchasesProvider = Provider.of<PurchasesProvider>(context, listen: false);
+              
+              final purchaseId = DateTime.now().millisecondsSinceEpoch.toString().substring(7);
+              
+              // ✅ LÍNEA CORREGIDA: Se agregó .toList() al final
+              final purchaseItems = cart.items.map((cartItem) {
+                return PurchaseItem(
+                  productId: cartItem.product.id.toString(),
+                  nombre: cartItem.product.nombre,
+                  precio: cartItem.product.precio,
+                  cantidad: cartItem.quantity,
+                  imagen: cartItem.product.imagen,
+                );
+              }).toList(); // ← AQUÍ ESTÁ LA CORRECCIÓN
+              
+              final purchase = Purchase(
+                id: purchaseId,
+                fecha: DateTime.now(),
+                total: cart.totalAmount,
+                items: purchaseItems,
+                estado: 'Procesando',
+                clienteEmail: currentUserEmail,
+                clienteNombre: currentUserName,
+              );
+              
+              purchasesProvider.addPurchase(purchase);
+              cart.clearCart();
+              Navigator.pop(context);
+              
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      const Icon(Icons.check_circle, color: Colors.white),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              '¡Compra realizada con éxito!',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            Text('Pedido #$purchaseId'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  backgroundColor: Colors.green,
+                  duration: const Duration(seconds: 4),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            child: const Text('Confirmar compra'),
+          ),
+        ],
       ),
     );
   }

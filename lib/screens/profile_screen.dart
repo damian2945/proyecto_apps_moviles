@@ -1,36 +1,57 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'login_screen.dart';
+import 'favorites_screen.dart';
+import 'purchases_screen.dart';
+import 'admin_orders_screen.dart';
+import '../providers/favorites_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({Key? key, required Map<String, String> currentUser}) : super(key: key);
+  final Map<String, String> currentUser;
+
+  const ProfileScreen({super.key, required this.currentUser});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // Simulación de datos de usuario activo
-  // En producción, estos datos vendrían de un servicio de autenticación
-  final Map<String, String> _currentUser = {
-    'email': 'damian@gmail.com',
-    'password': '1234', // En producción NUNCA mostrar la contraseña
-    'nombre': 'Damián',
-    'telefono': '+52 312 456 7890',
-    'direccion': 'Colima, México',
+  // Lista de todos los usuarios locales
+  final Map<String, Map<String, String>> _allUsers = {
+    'admin': {
+      'nombre': 'Administrador',
+      'telefono': '+52 312 000 0000',
+      'direccion': 'Tienda Principal',
+      'role': 'admin',
+    },
+    'damian@gmail.com': {
+      'nombre': 'Damián',
+      'telefono': '+52 312 456 7890',
+      'direccion': 'Colima, México',
+      'role': 'customer',
+    },
+    'alberto@gmail.com': {
+      'nombre': 'Alberto',
+      'telefono': '+52 312 123 4567',
+      'direccion': 'Guadalajara, México',
+      'role': 'customer',
+    },
+    'jesus@gmail.com': {
+      'nombre': 'Jesús',
+      'telefono': '+52 312 987 6543',
+      'direccion': 'Monterrey, México',
+      'role': 'customer',
+    },
   };
 
-  // Lista de usuarios locales (como en tu captura)
-  final Map<String, String> _localUsers = {
-    'damian@gmail.com': '1234',
-    'alberto@gmail.com': '123456',
-    'jesus@gmail.com': '123456789',
-  };
+  bool get isAdmin => widget.currentUser['role'] == 'admin';
 
   void _logout() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Cerrar sesión'),
-        content: Text('¿Estás seguro de cerrar sesión como ${_currentUser['nombre']}?'),
+        content: Text('¿Estás seguro de cerrar sesión como ${widget.currentUser['nombre']}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -38,12 +59,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Sesión cerrada: ${_currentUser['email']}'),
-                  backgroundColor: Colors.orange,
-                ),
+              Navigator.pop(context); // Cerrar diálogo
+              // Navegar al login y eliminar todas las rutas anteriores
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+                (route) => false,
               );
             },
             child: const Text('Cerrar sesión', style: TextStyle(color: Colors.red)),
@@ -53,12 +74,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Color get _primaryColor => isAdmin ? Colors.orange : Colors.blue;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mi Perfil', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.blue,
+        backgroundColor: _primaryColor,
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
@@ -70,7 +93,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.blue, Colors.blue.shade700],
+                  colors: [_primaryColor, _primaryColor.withOpacity(0.7)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -80,18 +103,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   CircleAvatar(
                     radius: 50,
                     backgroundColor: Colors.white,
-                    child: Text(
-                      _currentUser['nombre']![0].toUpperCase(),
-                      style: const TextStyle(
-                        fontSize: 40,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue,
-                      ),
-                    ),
+                    child: isAdmin
+                        ? const Icon(
+                            Icons.admin_panel_settings,
+                            size: 50,
+                            color: Colors.orange,
+                          )
+                        : Text(
+                            widget.currentUser['nombre']![0].toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 40,
+                              fontWeight: FontWeight.bold,
+                              color: _primaryColor,
+                            ),
+                          ),
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    _currentUser['nombre']!,
+                    widget.currentUser['nombre']!,
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -100,7 +129,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    _currentUser['email']!,
+                    widget.currentUser['email']!,
                     style: const TextStyle(
                       fontSize: 16,
                       color: Colors.white70,
@@ -113,14 +142,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       color: Colors.green,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.check_circle, color: Colors.white, size: 16),
-                        SizedBox(width: 4),
+                        const Icon(Icons.check_circle, color: Colors.white, size: 16),
+                        const SizedBox(width: 4),
                         Text(
-                          'Sesión activa',
-                          style: TextStyle(
+                          isAdmin ? 'Administrador activo' : 'Sesión activa',
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
@@ -129,11 +158,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ],
                     ),
                   ),
+                  if (isAdmin) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.security, color: Colors.white, size: 16),
+                          SizedBox(width: 4),
+                          Text(
+                            'Permisos de vendedor',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
 
-            // Información de la cuenta
+            // Contenido
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -141,54 +195,100 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   const Text(
                     'Información de la cuenta',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
                   _buildProfileItem(
                     icon: Icons.person_outline,
                     title: 'Nombre completo',
-                    value: _currentUser['nombre']!,
-                    onTap: () {
-                      _showEditDialog(context, 'Nombre', _currentUser['nombre']!);
-                    },
+                    value: widget.currentUser['nombre']!,
+                    onTap: () {},
                   ),
                   _buildProfileItem(
-                    icon: Icons.email_outlined,
-                    title: 'Correo electrónico',
-                    value: _currentUser['email']!,
-                    onTap: () {
-                      _showEditDialog(context, 'Email', _currentUser['email']!);
-                    },
+                    icon: isAdmin ? Icons.admin_panel_settings_outlined : Icons.email_outlined,
+                    title: isAdmin ? 'Usuario' : 'Correo electrónico',
+                    value: widget.currentUser['email']!,
+                    onTap: () {},
                   ),
                   _buildProfileItem(
                     icon: Icons.phone_outlined,
                     title: 'Teléfono',
-                    value: _currentUser['telefono']!,
-                    onTap: () {
-                      _showEditDialog(context, 'Teléfono', _currentUser['telefono']!);
-                    },
+                    value: widget.currentUser['telefono']!,
+                    onTap: () {},
                   ),
                   _buildProfileItem(
                     icon: Icons.location_on_outlined,
-                    title: 'Dirección',
-                    value: _currentUser['direccion']!,
-                    onTap: () {
-                      _showEditDialog(context, 'Dirección', _currentUser['direccion']!);
-                    },
+                    title: isAdmin ? 'Ubicación' : 'Dirección',
+                    value: widget.currentUser['direccion']!,
+                    onTap: () {},
                   ),
 
                   const SizedBox(height: 24),
 
+                  // NUEVA SECCIÓN: Mis actividades (solo para compradores)
+                  if (!isAdmin) ...[
+                    const Text(
+                      'Mis actividades',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildProfileItem(
+                      icon: Icons.shopping_bag_outlined,
+                      title: 'Mis compras',
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const PurchasesScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildProfileItem(
+                      icon: Icons.favorite_outline,
+                      title: 'Mis favoritos',
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Consumer<FavoritesProvider>(
+                            builder: (context, favorites, child) {
+                              return Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: _primaryColor.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  '${favorites.favoritesCount}',
+                                  style: TextStyle(
+                                    color: _primaryColor,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.arrow_forward_ios, size: 16),
+                        ],
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const FavoritesScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+
                   // Información de sesión
                   const Text(
                     'Información de sesión',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
                   Card(
@@ -196,11 +296,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.login, color: Colors.blue),
+                              Icon(Icons.login, color: _primaryColor),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
@@ -208,13 +307,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   children: [
                                     const Text(
                                       'Usuario activo',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey,
-                                      ),
+                                      style: TextStyle(fontSize: 14, color: Colors.grey),
                                     ),
                                     Text(
-                                      _currentUser['email']!,
+                                      widget.currentUser['email']!,
                                       style: const TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
@@ -228,7 +324,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           const Divider(height: 24),
                           Row(
                             children: [
-                              const Icon(Icons.people_outline, color: Colors.blue),
+                              Icon(Icons.badge_outlined, color: _primaryColor),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Tipo de cuenta',
+                                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                                    ),
+                                    Text(
+                                      isAdmin ? 'Administrador (Vendedor)' : 'Cliente (Comprador)',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const Divider(height: 24),
+                          Row(
+                            children: [
+                              Icon(Icons.people_outline, color: _primaryColor),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
@@ -236,13 +357,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   children: [
                                     const Text(
                                       'Usuarios registrados',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey,
-                                      ),
+                                      style: TextStyle(fontSize: 14, color: Colors.grey),
                                     ),
                                     Text(
-                                      '${_localUsers.length} cuentas locales',
+                                      '${_allUsers.length} cuentas locales',
                                       style: const TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
@@ -252,9 +370,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                               ),
                               TextButton(
-                                onPressed: () {
-                                  _showLocalUsers(context);
-                                },
+                                onPressed: () => _showAllUsers(context),
                                 child: const Text('Ver'),
                               ),
                             ],
@@ -265,69 +381,85 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
 
                   const SizedBox(height: 24),
-                  const Text(
-                    'Configuración',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+
+                  // Sección de permisos para admin
+                  if (isAdmin) ...[
+                    const Text(
+                      'Permisos de administrador',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildProfileItem(
-                    icon: Icons.shopping_bag_outlined,
-                    title: 'Mis pedidos',
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Función próximamente')),
-                      );
-                    },
-                  ),
-                  _buildProfileItem(
-                    icon: Icons.favorite_outline,
-                    title: 'Favoritos',
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Función próximamente')),
-                      );
-                    },
-                  ),
-                  _buildProfileItem(
-                    icon: Icons.notifications_outlined,
-                    title: 'Notificaciones',
-                    trailing: Switch(
-                      value: true,
-                      onChanged: (value) {},
+                    const SizedBox(height: 16),
+                    Card(
+                      elevation: 2,
+                      color: Colors.orange.shade50,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            _buildPermissionItem(
+                              icon: Icons.add_circle_outline,
+                              title: 'Crear productos',
+                              description: 'Agregar nuevos productos al inventario',
+                            ),
+                            const Divider(),
+                            _buildPermissionItem(
+                              icon: Icons.edit_outlined,
+                              title: 'Editar productos',
+                              description: 'Modificar información de productos',
+                            ),
+                            const Divider(),
+                            _buildPermissionItem(
+                              icon: Icons.delete_outline,
+                              title: 'Eliminar productos',
+                              description: 'Remover productos del inventario',
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                    onTap: null,
-                  ),
-                  _buildProfileItem(
-                    icon: Icons.lock_outline,
-                    title: 'Cambiar contraseña',
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                    onTap: () {
-                      _showChangePasswordDialog(context);
-                    },
-                  ),
-                  _buildProfileItem(
-                    icon: Icons.help_outline,
-                    title: 'Ayuda y soporte',
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Función próximamente')),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 16),
+                    
+                    // BOTÓN NUEVO: Gestionar Pedidos
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const AdminOrdersScreen(),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.shopping_bag),
+                        label: const Text(
+                          'Gestionar Pedidos',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+
+                  // Botón de cerrar sesión
                   SizedBox(
                     width: double.infinity,
                     height: 50,
                     child: OutlinedButton.icon(
                       onPressed: _logout,
                       icon: const Icon(Icons.logout, color: Colors.red),
-                      label: const Text('Cerrar sesión', style: TextStyle(color: Colors.red)),
+                      label: const Text(
+                        'Cerrar sesión',
+                        style: TextStyle(color: Colors.red),
+                      ),
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: Colors.red),
                         shape: RoundedRectangleBorder(
@@ -357,7 +489,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       margin: const EdgeInsets.only(bottom: 8),
       elevation: 1,
       child: ListTile(
-        leading: Icon(icon, color: Colors.blue),
+        leading: Icon(icon, color: _primaryColor),
         title: Text(title),
         subtitle: value != null ? Text(value) : null,
         trailing: trailing ?? (onTap != null ? const Icon(Icons.arrow_forward_ios, size: 16) : null),
@@ -366,43 +498,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _showEditDialog(BuildContext context, String field, String currentValue) {
-    final TextEditingController controller = TextEditingController(text: currentValue);
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Editar $field'),
-        content: TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            labelText: field,
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('$field actualizado: ${controller.text}'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            },
-            child: const Text('Guardar'),
-          ),
-        ],
+  Widget _buildPermissionItem({
+    required IconData icon,
+    required String title,
+    required String description,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.orange),
+      title: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.bold),
       ),
+      subtitle: Text(
+        description,
+        style: const TextStyle(fontSize: 12),
+      ),
+      dense: true,
     );
   }
 
-  void _showLocalUsers(BuildContext context) {
+  void _showAllUsers(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -411,20 +526,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
           width: double.maxFinite,
           child: ListView.builder(
             shrinkWrap: true,
-            itemCount: _localUsers.length,
+            itemCount: _allUsers.length,
             itemBuilder: (context, index) {
-              final email = _localUsers.keys.elementAt(index);
-              final isActive = email == _currentUser['email'];
+              final email = _allUsers.keys.elementAt(index);
+              final userData = _allUsers[email]!;
+              final isActive = email == widget.currentUser['email'];
+              final isAdminUser = userData['role'] == 'admin';
               
               return Card(
-                color: isActive ? Colors.blue.shade50 : null,
+                color: isActive ? _primaryColor.withOpacity(0.1) : null,
                 child: ListTile(
                   leading: CircleAvatar(
-                    backgroundColor: isActive ? Colors.blue : Colors.grey,
-                    child: Text(
-                      email[0].toUpperCase(),
-                      style: const TextStyle(color: Colors.white),
-                    ),
+                    backgroundColor: isActive ? _primaryColor : Colors.grey,
+                    child: isAdminUser
+                        ? const Icon(
+                            Icons.admin_panel_settings,
+                            color: Colors.white,
+                            size: 20,
+                          )
+                        : Text(
+                            userData['nombre']![0].toUpperCase(),
+                            style: const TextStyle(color: Colors.white),
+                          ),
                   ),
                   title: Text(
                     email,
@@ -433,7 +556,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   subtitle: Text(
-                    isActive ? 'Sesión activa' : 'Cuenta local',
+                    isActive
+                        ? '${userData['nombre']} - Sesión activa'
+                        : '${userData['nombre']} - ${isAdminUser ? "Administrador" : "Cliente"}',
                     style: TextStyle(
                       color: isActive ? Colors.green : Colors.grey,
                     ),
@@ -450,77 +575,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cerrar'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showChangePasswordDialog(BuildContext context) {
-    final TextEditingController currentPasswordController = TextEditingController();
-    final TextEditingController newPasswordController = TextEditingController();
-    final TextEditingController confirmPasswordController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Cambiar contraseña'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: currentPasswordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Contraseña actual',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: newPasswordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Nueva contraseña',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: confirmPasswordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Confirmar contraseña',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (newPasswordController.text == confirmPasswordController.text) {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Contraseña actualizada correctamente'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Las contraseñas no coinciden'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            },
-            child: const Text('Cambiar'),
           ),
         ],
       ),

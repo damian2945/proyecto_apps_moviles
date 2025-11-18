@@ -5,7 +5,6 @@ const ProductController = require('../controllers/productController');
 // Rutas para productos
 router.get('/productos', ProductController.getAllProducts);
 router.get('/productos/buscar', ProductController.searchProducts);
-router.get('/productos/categoria/:categoria', ProductController.getProductsByCategory);
 router.get('/productos/:id', ProductController.getProductById);
 router.post('/productos', ProductController.createProduct);
 router.put('/productos/:id', ProductController.updateProduct);

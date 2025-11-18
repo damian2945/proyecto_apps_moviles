@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // ← IMPORTANTE: Agregar este import
+import 'package:provider/provider.dart';
 import '../providers/product_provider.dart';
-import '../widgets/product_card.dart';
+import '../widgets/product_card.dart'; // ← Asegúrate de que esta ruta sea correcta
 
 class SearchResultsScreen extends StatelessWidget {
   final String searchQuery;
@@ -10,16 +10,13 @@ class SearchResultsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // CORRECCIÓN: Usar Provider.of en lugar de ProductProvider.of
-    final productProvider = Provider.of<ProductProvider>(context, listen: true);
-    
-    // Filtramos los productos usando la función del provider
+    final productProvider = Provider.of<ProductProvider>(context);
     final results = productProvider.searchProducts(searchQuery);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Results for "$searchQuery"', 
+          'Resultados para "$searchQuery"', 
           style: const TextStyle(color: Colors.black)
         ),
         backgroundColor: Colors.white,
@@ -33,16 +30,20 @@ class SearchResultsScreen extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.sentiment_dissatisfied, size: 50, color: Colors.grey),
+                    const Icon(
+                      Icons.sentiment_dissatisfied, 
+                      size: 50, 
+                      color: Colors.grey
+                    ),
                     const SizedBox(height: 10),
                     Text(
-                      'No products found for "$searchQuery".',
+                      'No se encontraron productos para "$searchQuery".',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 18, color: Colors.grey[700]),
                     ),
                     const SizedBox(height: 5),
                     const Text(
-                      'Try adjusting your search terms or checking your spelling.',
+                      'Intenta ajustar los términos de búsqueda.',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 14, color: Colors.grey),
                     ),
@@ -60,7 +61,11 @@ class SearchResultsScreen extends StatelessWidget {
               ),
               itemCount: results.length,
               itemBuilder: (context, index) {
-                return ProductCard(product: results[index]);
+                // ✅ CORRECCIÓN: Usar ProductCard correctamente
+                return ProductCard(
+                  product: results[index],
+                  // Si tu ProductCard necesita más parámetros, agrégalos aquí
+                );
               },
             ),
     );
